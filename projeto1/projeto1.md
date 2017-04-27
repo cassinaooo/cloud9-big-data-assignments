@@ -8,9 +8,9 @@
 
     ```(zeal, 33); (zeals, 1); (zed, 1); (zo, 1); (zodiac, 1);```
 
-3. Saída do comando ``` cat part* | wc -l ``` no diretório wc:
+3. Saída do comando ``` awk '$2 == 1 {print $2}' part-* | wc -l``` no diretório wc:
 
-    ```28716```
+    ```12664```
 
 ### Código WordCount bespin modificado:
 
@@ -22,6 +22,6 @@
 
     ```(zeal, 33); (zeals, 1); (zed, 1); (zo, 1); (zodiac, 1);```
 
-6. Saída do comando ``` cat part* | wc -l ``` no diretório wc:
+6. Saída do comando ``` awk '$2 == 1 {print $2}' part-* | wc -l ``` no diretório wc:
 
-    ```21882```
+    ```8027```
