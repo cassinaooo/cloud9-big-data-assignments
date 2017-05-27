@@ -33,10 +33,8 @@ public class PairsReducer extends Reducer<PairOfStrings, IntWritable, PairOfStri
     @Override
     public void reduce(PairOfStrings pair, Iterable<IntWritable> values, Context context )
             throws IOException, InterruptedException{
-        // Recieving pair and pair counts -> Sum these for this pair's total
-        // Only calculate PMI for pairs that occur 10 or more times
-
         int pairSum = 0;
+        
         for(IntWritable value : values) {
             pairSum += value.get();
         }
