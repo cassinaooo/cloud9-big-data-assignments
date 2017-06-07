@@ -16,13 +16,14 @@
 
 package br.edu.ufam.willianscfa.index;
 
-import br.edu.ufam.willianscfa.utils.PairOfStringInt;
+import br.edu.ufam.willianscfa.utils.PairOfStrings;
 import br.edu.ufam.willianscfa.utils.WholeFileInputFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -49,7 +50,7 @@ public class Index extends Configured implements Tool {
 
     private static final class Args {
         @Option(name = "--input", metaVar = "[path]", required = false, usage = "input path")
-        String input = "splitted-shakespeare";
+        String input = "splitted-shakespeare-sample";
 
         @Option(name = "--output", metaVar = "[path]", required = false, usage = "output path")
         String output = "index";
@@ -92,8 +93,8 @@ public class Index extends Configured implements Tool {
         FileInputFormat.setInputPaths(index_job, args.input);
         FileOutputFormat.setOutputPath(index_job, new Path(args.output));
 
-        index_job.setMapOutputKeyClass(Text.class);
-        index_job.setMapOutputValueClass(PairOfStringInt.class);
+        index_job.setMapOutputKeyClass(PairOfStrings.class);
+        index_job.setMapOutputValueClass(VIntWritable.class);
         index_job.setOutputKeyClass(Text.class);
         index_job.setOutputValueClass(Text.class);
 

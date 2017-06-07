@@ -1,35 +1,63 @@
 package br.edu.ufam.willianscfa.index;
 
-import br.edu.ufam.willianscfa.utils.PairOfStringInt;
+import br.edu.ufam.willianscfa.utils.PairOfStrings;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
 
-public class IndexReducer extends Reducer<Text, PairOfStringInt, Text, Text> {
-    private static final Text POSTINGS_ARRAY = new Text();
+public class IndexReducer extends Reducer<PairOfStrings, VIntWritable, Text, Text> {
+    private static final StringBuilder postings_list = new StringBuilder();
+    private static String prev_term;
+
+    private static final Text KEY = new Text(), VALUE = new Text();
 
     @Override
-    public void reduce(Text term, Iterable<PairOfStringInt> postings, Context context )
+    public void setup(Context context){
+        prev_term = null;
+    }
+
+    @Override
+    public void reduce(PairOfStrings term_docid, Iterable<VIntWritable> postings, Context context)
             throws IOException, InterruptedException{
 
         // tendo que emitir Text aqui, mas a saida eh um array de postings da forma: TERM \t [(p1, n1), (p2, n2), (p3, n3)]
         // aonde pi e ni sao, respectivamente, o caminho para um arquivo, e a quantidade de ocorrencias de TERM naquele arquivo
 
-        StringBuilder result = new StringBuilder();
-        result.append("[");
+        if(prev_term != null && !term_docid.getLeftElement().equals(prev_term)){
+            // apaga um espaco e a virgula no final
+            postings_list.delete(postings_list.length() - 2,postings_list.length());
+            // formatacao
+            postings_list.append("]");
 
-        for(PairOfStringInt pair : postings){
-            result.append("(").append(pair.getLeftElement()).append(": ").append(pair.getRightElement()).append("), ");
+            KEY.set(prev_term);
+            VALUE.set(postings_list.toString());
+
+            context.write(KEY, VALUE);
+
+            // P.reset
+            postings_list.setLength(0);
+            postings_list.append("[");
         }
 
-        result.delete(result.length() - 2, result.length());
+        postings_list.append("(").append(term_docid.getRightElement()).append(": ").append(postings.iterator().next()).append(" ), ");
+        prev_term = term_docid.getLeftElement();
 
-        result.append("]");
+    }
 
-        POSTINGS_ARRAY.set(result.toString());
+    @Override
+    public void cleanup(Context context) throws IOException, InterruptedException{
+        // apaga um espaco e a virgula no final
+        postings_list.delete(postings_list.length() - 2,postings_list.length());
+        // formatacao
+        postings_list.append("]");
+        if(prev_term != null){
+            KEY.set(prev_term);
+            VALUE.set(postings_list.toString());
 
-        context.write(term, POSTINGS_ARRAY);
+            context.write(KEY, VALUE);
+        }
     }
 
 }

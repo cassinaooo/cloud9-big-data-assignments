@@ -1,17 +1,18 @@
 package br.edu.ufam.willianscfa.index;
 
-import br.edu.ufam.willianscfa.utils.PairOfStringInt;
+import br.edu.ufam.willianscfa.utils.PairOfStrings;
 import br.edu.ufam.willianscfa.utils.Tokenizer;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
 import java.util.HashMap;
 
-public final class IndexMapper extends Mapper<Text, Text, Text, PairOfStringInt> {
+public final class IndexMapper extends Mapper<Text, Text, PairOfStrings, VIntWritable> {
+    private static final PairOfStrings TERM_DOCID = new PairOfStrings();
+    private static final VIntWritable TF = new VIntWritable();
     private static final HashMap<String, Integer> postings = new HashMap<>();
-    private static final Text TERM = new Text();
-    private static final PairOfStringInt POSTING = new PairOfStringInt();
 
     @Override
     public void map(Text path, Text content, Context context) throws IOException, InterruptedException {
@@ -24,13 +25,13 @@ public final class IndexMapper extends Mapper<Text, Text, Text, PairOfStringInt>
             }
         }
 
-        POSTING.setLeftElement(path.toString());
+        TERM_DOCID.setRightElement(path.toString());
 
         for(String term : postings.keySet()){
-            TERM.set(term);
-            POSTING.setRightElement(postings.get(term));
+            TERM_DOCID.setLeftElement(term);
+            TF.set(postings.get(term));
 
-            context.write(TERM, POSTING);
+            context.write(TERM_DOCID, TF);
         }
 
         postings.clear();
