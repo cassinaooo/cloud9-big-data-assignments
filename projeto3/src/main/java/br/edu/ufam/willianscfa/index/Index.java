@@ -16,7 +16,8 @@
 
 package br.edu.ufam.willianscfa.index;
 
-import br.edu.ufam.willianscfa.utils.PairOfStrings;
+import br.edu.ufam.willianscfa.utils.ArrayListWritable;
+import br.edu.ufam.willianscfa.utils.PairOfStringInt;
 import br.edu.ufam.willianscfa.utils.WholeFileInputFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -27,6 +28,7 @@ import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.MapFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -50,13 +52,13 @@ public class Index extends Configured implements Tool {
 
     private static final class Args {
         @Option(name = "--input", metaVar = "[path]", required = false, usage = "input path")
-        String input = "splitted-shakespeare-sample";
+        String input = "splittedshakespeare";
 
         @Option(name = "--output", metaVar = "[path]", required = false, usage = "output path")
-        String output = "index";
+        String output = "index-text";
 
         @Option(name = "--reducers", metaVar = "[num]", usage = "number of reducers")
-        int numReducers = 5;
+        int numReducers = 1;
     }
 
     /**
@@ -93,12 +95,13 @@ public class Index extends Configured implements Tool {
         FileInputFormat.setInputPaths(index_job, args.input);
         FileOutputFormat.setOutputPath(index_job, new Path(args.output));
 
-        index_job.setMapOutputKeyClass(PairOfStrings.class);
+        index_job.setMapOutputKeyClass(PairOfStringInt.class);
         index_job.setMapOutputValueClass(VIntWritable.class);
         index_job.setOutputKeyClass(Text.class);
-        index_job.setOutputValueClass(Text.class);
+        index_job.setOutputValueClass(ArrayListWritable.class);
 
-        index_job.setOutputFormatClass(TextOutputFormat.class);
+        //index_job.setOutputFormatClass(TextOutputFormat.class);
+        index_job.setOutputFormatClass(MapFileOutputFormat.class);
 
         index_job.setMapperClass(IndexMapper.class);
         index_job.setReducerClass(IndexReducer.class);
@@ -110,7 +113,7 @@ public class Index extends Configured implements Tool {
 
         long startTime = System.currentTimeMillis();
         index_job.waitForCompletion(true);
-        LOG.info("PMI finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+        LOG.info("Index job finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
 
 
         return 0;

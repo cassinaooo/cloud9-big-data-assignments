@@ -1,17 +1,18 @@
 package br.edu.ufam.willianscfa.index;
 
-import br.edu.ufam.willianscfa.utils.PairOfStrings;
+import br.edu.ufam.willianscfa.utils.ArrayListWritable;
+import br.edu.ufam.willianscfa.utils.PairOfStringInt;
+import br.edu.ufam.willianscfa.utils.PairOfVInts;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
 
-public class IndexReducer extends Reducer<PairOfStrings, VIntWritable, Text, Text> {
-    private static final StringBuilder postings_list = new StringBuilder();
+public class IndexReducer extends Reducer<PairOfStringInt, VIntWritable, Text, ArrayListWritable<PairOfVInts>> {
+    private static ArrayListWritable<PairOfVInts> POSTINGS_LIST = new ArrayListWritable<>();
     private static String prev_term;
-
-    private static final Text KEY = new Text(), VALUE = new Text();
+    private static final Text KEY = new Text();
 
     @Override
     public void setup(Context context){
@@ -19,45 +20,47 @@ public class IndexReducer extends Reducer<PairOfStrings, VIntWritable, Text, Tex
     }
 
     @Override
-    public void reduce(PairOfStrings term_docid, Iterable<VIntWritable> postings, Context context)
+    public void reduce(PairOfStringInt term_docid, Iterable<VIntWritable> postings, Context context)
             throws IOException, InterruptedException{
 
-        // tendo que emitir Text aqui, mas a saida eh um array de postings da forma: TERM \t [(p1, n1), (p2, n2), (p3, n3)]
-        // aonde pi e ni sao, respectivamente, o caminho para um arquivo, e a quantidade de ocorrencias de TERM naquele arquivo
-
         if(prev_term != null && !term_docid.getLeftElement().equals(prev_term)){
-            // apaga um espaco e a virgula no final
-            postings_list.delete(postings_list.length() - 2,postings_list.length());
-            // formatacao
-            postings_list.append("]");
-
-            KEY.set(prev_term);
-            VALUE.set(postings_list.toString());
-
-            context.write(KEY, VALUE);
-
-            // P.reset
-            postings_list.setLength(0);
-            postings_list.append("[");
+            emit(context);
         }
 
-        postings_list.append("(").append(term_docid.getRightElement()).append(": ").append(postings.iterator().next()).append(" ), ");
-        prev_term = term_docid.getLeftElement();
+        // stream de VINTS: t   [(d_1, o_1), (d_2, o_2), (d_3, o_3) ... (d_n, o_n)
+        // onde d_i eh o docid do documento i e o_i eh a quantidade de ocorrencias de t (df) no documento i
+        // supondo que essa porra desse ArrayListWritable serializa direito.
+        // eh tb garantido que esse map eh chamado apenas uma vez para cada par,
+        // por isso iterator.next eh suficiente
+        POSTINGS_LIST.add(new PairOfVInts(term_docid.getRightElement(), postings.iterator().next().get()));
 
+        prev_term = term_docid.getLeftElement();
     }
 
     @Override
-    public void cleanup(Context context) throws IOException, InterruptedException{
-        // apaga um espaco e a virgula no final
-        postings_list.delete(postings_list.length() - 2,postings_list.length());
-        // formatacao
-        postings_list.append("]");
-        if(prev_term != null){
-            KEY.set(prev_term);
-            VALUE.set(postings_list.toString());
+    public void cleanup(Context context) throws IOException, InterruptedException {
+        emit(context);
+    }
 
-            context.write(KEY, VALUE);
+
+    private static void emit(Context context) throws IOException, InterruptedException{
+        if(POSTINGS_LIST.size() == 0){
+            return;
         }
+
+        // get na lista e depois no VIntWritable
+        /*int primeiroElemento = POSTINGS_LIST.get(0).getLeftElement();
+
+        // d-gaps, shuffle & sort garante que o primeiro eh menor que o restante, sem numeros negativos
+        for(int i = 1; i < POSTINGS_LIST.size(); i++) {
+            POSTINGS_LIST.get(i).setLeftElement(POSTINGS_LIST.get(i).getLeftElement() - primeiroElemento );
+        }*/
+
+        KEY.set(prev_term);
+        context.write(KEY, POSTINGS_LIST);
+
+        // P.reset
+        POSTINGS_LIST.clear();
     }
 
 }

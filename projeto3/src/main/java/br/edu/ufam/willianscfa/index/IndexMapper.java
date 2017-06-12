@@ -1,6 +1,7 @@
 package br.edu.ufam.willianscfa.index;
 
-import br.edu.ufam.willianscfa.utils.PairOfStrings;
+import br.edu.ufam.willianscfa.utils.FileIdExtractor;
+import br.edu.ufam.willianscfa.utils.PairOfStringInt;
 import br.edu.ufam.willianscfa.utils.Tokenizer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.VIntWritable;
@@ -9,8 +10,8 @@ import org.apache.hadoop.mapreduce.Mapper;
 import java.io.IOException;
 import java.util.HashMap;
 
-public final class IndexMapper extends Mapper<Text, Text, PairOfStrings, VIntWritable> {
-    private static final PairOfStrings TERM_DOCID = new PairOfStrings();
+public final class IndexMapper extends Mapper<Text, Text, PairOfStringInt, VIntWritable> {
+    private static final PairOfStringInt TERM_DOCID = new PairOfStringInt();
     private static final VIntWritable TF = new VIntWritable();
     private static final HashMap<String, Integer> postings = new HashMap<>();
 
@@ -25,7 +26,7 @@ public final class IndexMapper extends Mapper<Text, Text, PairOfStrings, VIntWri
             }
         }
 
-        TERM_DOCID.setRightElement(path.toString());
+        TERM_DOCID.setRightElement(FileIdExtractor.extractId(path.toString()));
 
         for(String term : postings.keySet()){
             TERM_DOCID.setLeftElement(term);

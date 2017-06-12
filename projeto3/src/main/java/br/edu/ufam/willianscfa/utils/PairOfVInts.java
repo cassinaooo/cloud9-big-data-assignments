@@ -1,3 +1,4 @@
+package br.edu.ufam.willianscfa.utils;
 /*
  * Lintools: tools by @lintool
  *
@@ -14,27 +15,27 @@
  * permissions and limitations under the License.
  */
 
-package br.edu.ufam.willianscfa.utils;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.io.WritableComparator;
+import org.apache.hadoop.io.WritableUtils;
 
 /**
- * WritableComparable representing a pair consisting of a String and an int. The elements in the
- * pair are referred to as the left and right elements. The natural sort order is: first by the left
- * element, and then by the right element.
+ * WritableComparable representing a pair of ints. The elements in the pair are referred to as the
+ * left and right elements. The natural sort order is: first by the left element, and then by the
+ * right element.
  */
-public class PairOfStringInt implements WritableComparable<PairOfStringInt> {
-    private String leftElement;
-    private int rightElement;
+public class PairOfVInts implements WritableComparable<PairOfVInts> {
+    private int leftElement, rightElement;
 
     /**
      * Creates a pair.
      */
-    public PairOfStringInt() {
+    public PairOfVInts() {
     }
 
     /**
@@ -43,18 +44,18 @@ public class PairOfStringInt implements WritableComparable<PairOfStringInt> {
      * @param left the left element
      * @param right the right element
      */
-    public PairOfStringInt(String left, int right) {
+    public PairOfVInts(int left, int right) {
         set(left, right);
     }
 
     /**
-     * Deserializes the pair.
+     * Deserializes this pair.
      *
      * @param in source for raw byte representation
      */
     public void readFields(DataInput in) throws IOException {
-        leftElement = Text.readString(in);
-        rightElement = in.readInt();
+        leftElement = WritableUtils.readVInt(in);
+        rightElement = WritableUtils.readVInt(in);
     }
 
     /**
@@ -63,8 +64,8 @@ public class PairOfStringInt implements WritableComparable<PairOfStringInt> {
      * @param out where to write the raw byte representation
      */
     public void write(DataOutput out) throws IOException {
-        Text.writeString(out, leftElement);
-        out.writeInt(rightElement);
+        WritableUtils.writeVInt(out, leftElement);
+        WritableUtils.writeVInt(out, rightElement);
     }
 
     /**
@@ -72,7 +73,7 @@ public class PairOfStringInt implements WritableComparable<PairOfStringInt> {
      *
      * @return the left element
      */
-    public String getLeftElement() {
+    public int getLeftElement() {
         return leftElement;
     }
 
@@ -90,7 +91,7 @@ public class PairOfStringInt implements WritableComparable<PairOfStringInt> {
      *
      * @return the key
      */
-    public String getKey() {
+    public int getKey() {
         return leftElement;
     }
 
@@ -109,12 +110,12 @@ public class PairOfStringInt implements WritableComparable<PairOfStringInt> {
      * @param left the left element
      * @param right the right element
      */
-    public void set(String left, int right) {
+    public void set(int left, int right) {
         leftElement = left;
         rightElement = right;
     }
 
-    public void setLeftElement(String leftElement) {
+    public void setLeftElement(int leftElement) {
         this.leftElement = leftElement;
     }
 
@@ -122,16 +123,20 @@ public class PairOfStringInt implements WritableComparable<PairOfStringInt> {
         this.rightElement = rightElement;
     }
 
-    /**
-     * Checks two pairs for equality.
-     *
-     * @param obj object for comparison
-     * @return <code>true</code> if <code>obj</code> is equal to this object, <code>false</code>
-     *         otherwise
-     */
-    public boolean equals(Object obj) {
-        PairOfStringInt pair = (PairOfStringInt) obj;
-        return leftElement.equals(pair.getLeftElement()) && rightElement == pair.getRightElement();
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        PairOfVInts that = (PairOfVInts) o;
+
+        if (leftElement != that.leftElement) return false;
+        return rightElement == that.rightElement;
+    }
+
+    @Override
+    public int hashCode() {
+        return leftElement + rightElement;
     }
 
     /**
@@ -141,28 +146,25 @@ public class PairOfStringInt implements WritableComparable<PairOfStringInt> {
      * @return a value less than zero, a value greater than zero, or zero if this pair should be
      *         sorted before, sorted after, or is equal to <code>obj</code>.
      */
-    public int compareTo(PairOfStringInt pair) {
-        String pl = pair.getLeftElement();
+    public int compareTo(PairOfVInts pair) {
+        int pl = pair.getLeftElement();
         int pr = pair.getRightElement();
 
-        if (leftElement.equals(pl)) {
-            if (rightElement == pr)
-                return 0;
-
-            return rightElement < pr ? -1 : 1;
+        if (leftElement == pl) {
+            if (rightElement < pr)
+                return -1;
+            if (rightElement > pr)
+                return 1;
+            return 0;
         }
 
-        return leftElement.compareTo(pl);
+        if (leftElement < pl)
+            return -1;
+
+        return 1;
     }
 
-    /**
-     * Returns a hash code value for the pair.
-     *
-     * @return hash code for the pair
-     */
-    public int hashCode() {
-        return leftElement.hashCode() + rightElement;
-    }
+
 
     /**
      * Generates human-readable String representation of this pair.
@@ -178,45 +180,39 @@ public class PairOfStringInt implements WritableComparable<PairOfStringInt> {
      *
      * @return clone of this object
      */
-    public PairOfStringInt clone() {
-        return new PairOfStringInt(this.leftElement, this.rightElement);
+    public PairOfVInts clone() {
+        return new PairOfVInts(this.leftElement, this.rightElement);
     }
 
-    /** Comparator optimized for <code>PairOfStringInt</code>. */
+    /** Comparator optimized for <code>PairOfInts</code>. */
     public static class Comparator extends WritableComparator {
 
         /**
-         * Creates a new Comparator optimized for <code>PairOfStrings</code>.
+         * Creates a new Comparator optimized for <code>PairOfInts</code>.
          */
         public Comparator() {
-            super(PairOfStringInt.class);
+            super(PairOfVInts.class);
         }
 
         /**
          * Optimization hook.
          */
         public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
-            try {
-                int firstVIntL1 = WritableUtils.decodeVIntSize(b1[s1]);
-                int firstVIntL2 = WritableUtils.decodeVIntSize(b2[s2]);
-                int firstStrL1 = readVInt(b1, s1);
-                int firstStrL2 = readVInt(b2, s2);
-                int cmp = compareBytes(b1, s1 + firstVIntL1, firstStrL1, b2, s2 + firstVIntL2, firstStrL2);
-                if (cmp != 0) {
-                    return cmp;
-                }
+            int thisLeftValue = readInt(b1, s1);
+            int thatLeftValue = readInt(b2, s2);
 
-                int thisRightValue = readInt(b1, s1 + firstVIntL1 + firstStrL1);
-                int thatRightValue = readInt(b2, s2 + firstVIntL2 + firstStrL2);
+            if (thisLeftValue == thatLeftValue) {
+                int thisRightValue = readInt(b1, s1 + 4);
+                int thatRightValue = readInt(b2, s2 + 4);
 
                 return (thisRightValue < thatRightValue ? -1 : (thisRightValue == thatRightValue ? 0 : 1));
-            } catch (IOException e) {
-                throw new IllegalArgumentException(e);
             }
+
+            return (thisLeftValue < thatLeftValue ? -1 : (thisLeftValue == thatLeftValue ? 0 : 1));
         }
     }
 
     static { // register this comparator
-        WritableComparator.define(PairOfStringInt.class, new Comparator());
+        WritableComparator.define(PairOfVInts.class, new Comparator());
     }
 }

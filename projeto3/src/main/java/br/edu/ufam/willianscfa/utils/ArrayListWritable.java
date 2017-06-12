@@ -1,4 +1,3 @@
-package br.edu.ufam.willianscfa.utils;
 /*
  * Lintools: tools by @lintool
  *
@@ -15,6 +14,7 @@ package br.edu.ufam.willianscfa.utils;
  * permissions and limitations under the License.
  */
 
+package br.edu.ufam.willianscfa.utils;
 
 import java.io.DataInput;
 import java.io.DataOutput;
