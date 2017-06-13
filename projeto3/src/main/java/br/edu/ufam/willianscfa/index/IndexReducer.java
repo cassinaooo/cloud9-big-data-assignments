@@ -48,13 +48,14 @@ public class IndexReducer extends Reducer<PairOfStringInt, VIntWritable, Text, A
             return;
         }
 
-        // get na lista e depois no VIntWritable
-        /*int primeiroElemento = POSTINGS_LIST.get(0).getLeftElement();
-
-        // d-gaps, shuffle & sort garante que o primeiro eh menor que o restante, sem numeros negativos
-        for(int i = 1; i < POSTINGS_LIST.size(); i++) {
-            POSTINGS_LIST.get(i).setLeftElement(POSTINGS_LIST.get(i).getLeftElement() - primeiroElemento );
-        }*/
+        int termoAtual;
+        int termoAnterior = 0;
+        // d-gaps, shuffle & sort garante que o anterir eh menor que o atual, sem numeros negativos
+        for(int i = 0; i < POSTINGS_LIST.size(); i++) {
+            termoAtual = POSTINGS_LIST.get(i).getLeftElement(); // salva o cabra na posicao i
+            POSTINGS_LIST.get(i).setLeftElement(termoAtual - termoAnterior); // subtrai o cabra atual da posicao i-1 (0 na primeira passada)
+            termoAnterior = termoAtual;
+        }
 
         KEY.set(prev_term);
         context.write(KEY, POSTINGS_LIST);

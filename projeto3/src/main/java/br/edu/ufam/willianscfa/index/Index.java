@@ -52,10 +52,10 @@ public class Index extends Configured implements Tool {
 
     private static final class Args {
         @Option(name = "--input", metaVar = "[path]", required = false, usage = "input path")
-        String input = "splittedshakespeare";
+        String input = "splitted-shakespeare";
 
         @Option(name = "--output", metaVar = "[path]", required = false, usage = "output path")
-        String output = "index-text";
+        String output = "index";
 
         @Option(name = "--reducers", metaVar = "[num]", usage = "number of reducers")
         int numReducers = 1;

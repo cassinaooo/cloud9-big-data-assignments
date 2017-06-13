@@ -114,10 +114,17 @@ public class BooleanRetrieval extends Configured implements Tool {
 
     private ArrayListWritable<PairOfVInts> fetchPostings(String term) throws IOException {
         Text key = new Text();
+
         ArrayListWritable<PairOfVInts> value = new ArrayListWritable<>();
 
         key.set(term);
         index.get(key, value);
+
+        // refazendo o indice utilizando as dgaps
+
+        for (int i = 1; i < value.size(); i++) {
+            value.get(i).setLeftElement(value.get(i -1).getLeftElement() + value.get(i).getLeftElement());
+        }
 
         return value;
     }
