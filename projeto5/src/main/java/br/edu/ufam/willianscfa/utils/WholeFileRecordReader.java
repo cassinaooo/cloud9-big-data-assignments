@@ -9,6 +9,7 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -16,12 +17,12 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 //vv WholeFileRecordReader
-class WholeFileRecordReader extends RecordReader<Text, Text> {
+class WholeFileRecordReader extends RecordReader<IntWritable, Text> {
 
     private FileSplit fileSplit;
     private Configuration conf;
     private Text contents = new Text();
-    private Text path = new Text("not-initialized");
+    private IntWritable path = new IntWritable(-1);
     private boolean processed = false;
 
     @Override
@@ -29,7 +30,7 @@ class WholeFileRecordReader extends RecordReader<Text, Text> {
             throws IOException, InterruptedException {
         this.fileSplit = (FileSplit) split;
         // meu ->
-        this.path.set(fileSplit.getPath().getName());
+        this.path.set(FileIdExtractor.extractId(fileSplit.getPath().getName()));
         // --
         this.conf = context.getConfiguration();
     }
@@ -57,7 +58,7 @@ class WholeFileRecordReader extends RecordReader<Text, Text> {
     }
 
     @Override
-    public Text getCurrentKey() throws IOException, InterruptedException {
+    public IntWritable getCurrentKey() throws IOException, InterruptedException {
         return path;
     }
 

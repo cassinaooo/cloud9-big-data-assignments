@@ -11,7 +11,7 @@ import org.apache.hadoop.mapreduce.lib.input.*;
 
 //vv WholeFileInputFormat
 public class WholeFileInputFormat
-        extends FileInputFormat<Text, Text> {
+        extends FileInputFormat<IntWritable, Text> {
 
     @Override
     protected boolean isSplitable(JobContext context, Path file) {
@@ -19,7 +19,7 @@ public class WholeFileInputFormat
     }
 
     @Override
-    public RecordReader<Text, Text> createRecordReader(
+    public RecordReader<IntWritable, Text> createRecordReader(
             InputSplit split, TaskAttemptContext context) throws IOException,
             InterruptedException {
         WholeFileRecordReader reader = new WholeFileRecordReader();
